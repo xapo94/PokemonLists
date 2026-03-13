@@ -19,4 +19,9 @@ enum PokemonGenderEnum: string
     {
         return array_map(fn ($gender) => $gender->value, self::cases());
     }
+
+    public static function default(): self
+    {
+        return self::Male;
+    }
 }

@@ -31,7 +31,11 @@ class TeamController extends Controller
         ]);
 
         $attachData = collect($validated['pokemon_slots'])->mapWithKeys(fn ($slot) => [
-            $slot['pokemon_id'] => ['slot' => $slot['slot']],
+            $slot['pokemon_id'] => [
+                'slot' => $slot['slot'],
+                'level' => $slot['level'],
+                'gender' => $slot['gender'],
+            ],
         ]);
 
         $team->pokemon()->attach($attachData);
@@ -53,8 +57,8 @@ class TeamController extends Controller
         $slots = $team->pokemon->map(fn ($p) => [
             'id' => $p->id,
             'name' => $p->name,
-            'level' => $p->pivot->level ?? 100,
-            'gender' => $p->pivot->gender instanceof \App\Enums\PokemonGenderEnum ? $p->pivot->gender->value : ($p->pivot->gender ?? 'male'),
+            'level' => $p->pivot->level,
+            'gender' => $p->pivot->gender->value,
         ]);
 
         return view('pokemon.teams.edit', [
@@ -74,7 +78,11 @@ class TeamController extends Controller
         ]);
 
         $syncData = collect($validated['pokemon_slots'])->mapWithKeys(fn ($slot) => [
-            $slot['pokemon_id'] => ['slot' => $slot['slot']],
+            $slot['pokemon_id'] => [
+                'slot' => $slot['slot'],
+                'level' => $slot['level'],
+                'gender' => $slot['gender'],
+            ],
         ]);
 
         $team->pokemon()->sync($syncData);

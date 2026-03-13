@@ -38,8 +38,11 @@
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-zinc-500">Gender</label>
                             <select name="pokemon_slots[{{ $i }}][gender]" class="slot-gender border border-border rounded px-2 py-1 text-sm bg-background">
-                                <option value="male" selected>Male</option>
-                                <option value="female">Female</option>
+                                @foreach(\App\Enums\PokemonGenderEnum::cases() as $gender)
+                                    <option value="{{ $gender->value }}" {{ $gender === \App\Enums\PokemonGenderEnum::default() ? 'selected' : '' }}>
+                                        {{ $gender->label() }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                     </div>

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Team;
 
+use App\Enums\PokemonGenderEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTeamRequest extends FormRequest
 {
@@ -36,6 +38,8 @@ class StoreTeamRequest extends FormRequest
             'pokemon_slots' => ['required', 'array', 'min:1', 'max:6'],
             'pokemon_slots.*.pokemon_id' => ['required', 'integer', 'exists:pokemons,id'],
             'pokemon_slots.*.slot' => ['required', 'integer', 'min:1', 'max:6'],
+            'pokemon_slots.*.level' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'pokemon_slots.*.gender' => ['nullable', Rule::in(PokemonGenderEnum::values())],
         ];
     }
 

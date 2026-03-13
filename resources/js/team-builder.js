@@ -130,8 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pokemon) {
                 box.querySelector('.slot-image').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
                 box.querySelector('.slot-name').textContent = pokemon.name;
-                box.querySelector('.slot-level').value = pokemon.level ?? 100;
-                box.querySelector('.slot-gender').value = pokemon.gender ?? 'male';
+                if (pokemon.level) box.querySelector('.slot-level').value = pokemon.level;
+                if (pokemon.gender) box.querySelector('.slot-gender').value = pokemon.gender;
                 pokemonIdInput.value = pokemon.id;
                 pokemonIdInput.disabled = false;
                 slotNumberInput.value = i + 1;
