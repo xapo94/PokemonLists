@@ -6,6 +6,12 @@
             @csrf
             @method('PATCH')
 
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    <p class="text-red-500 text-sm">{{ $error }}</p>
+                @endforeach
+            @endif
+
             <div>
                 <label for="name" class="block text-sm mb-1">Team Name</label>
                 <input

@@ -14,6 +14,16 @@ class StoreTeamRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'pokemon_slots' => collect($this->pokemon_slots)
+                ->filter(fn ($slot) => ! empty($slot['pokemon_id']))
+                ->values()
+                ->toArray(),
+        ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

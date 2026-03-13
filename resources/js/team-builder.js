@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('team_pokemon_search');
     const resultsDiv = document.getElementById('team_pokemon_results');
     const slotsDiv = document.getElementById('team_slots');
+    const slotBoxes = slotsDiv.querySelectorAll('.slot-box');
     const maxWarning = document.getElementById('team_max_warning');
     const duplicateWarning = document.getElementById('team_duplicate_warning');
 
@@ -24,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------
     const existing = JSON.parse(builder.dataset.pokemon || '[]');
     existing.forEach(p => slots.push(p));
-    renderSlots();
+    syncSlots();
 
     // -------------------------
     // Search
@@ -94,13 +95,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
         maxWarning.classList.add('hidden');
         slots.push(pokemon);
-        renderSlots();
+        syncSlots();
     }
 
     function removeSlot(index) {
         slots.splice(index, 1);
         maxWarning.classList.add('hidden');
-        renderSlots();
+        syncSlots();
+    }
+
+    // -------------------------
+    // Sync slots array to blade boxes
+    // -------------------------
+    function syncSlots() {
+        slotBoxes.forEach((box, i) => {
+            const pokemon = slots[i];
+            const pokemonIdInput = box.querySelector('.slot-pokemon-id');
+            const slotNumberInput = box.querySelector('.slot-number');
+
+            if (pokemon) {
+                box.querySelector('.slot-image').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+                box.querySelector('.slot-name').textContent = pokemon.name;
+                pokemonIdInput.value = pokemon.id;
+                pokemonIdInput.disabled = false;
+                slotNumberInput.value = i + 1;
+                slotNumberInput.disabled = false;
+                box.classList.remove('hidden');
+            } else {
+                box.querySelector('.slot-image').src = '';
+                box.querySelector('.slot-name').textContent = '';
+                pokemonIdInput.value = '';
+                pokemonIdInput.disabled = true;
+                slotNumberInput.value = i + 1;
+                slotNumberInput.disabled = true;
+                box.classList.add('hidden');
+            }
+        });
+
+        wireRemoveButtons();
+        wireDragEvents();
+    }
+
+    // -------------------------
+    // Wire Remove Buttons
+    // -------------------------
+    function wireRemoveButtons() {
+        slotBoxes.forEach((box, i) => {
+            const btn = box.querySelector('.slot-remove');
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                removeSlot(i);
+            };
+        });
     }
 
     // -------------------------
@@ -108,81 +154,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------
     function getBoxFromTouch(touch) {
         const el = document.elementFromPoint(touch.clientX, touch.clientY);
-        return el ? el.closest('[data-index]') : null;
+        return el ? el.closest('.slot-box') : null;
     }
 
-    function applyDragEvents(box, index) {
-        box.addEventListener('dragstart', () => {
-            draggedIndex = index;
-            setTimeout(() => box.classList.add('opacity-50'), 0);
-        });
+    function wireDragEvents() {
+        slotBoxes.forEach((box, index) => {
+            if (!slots[index]) return;
 
-        box.addEventListener('dragend', () => {
-            draggedIndex = null;
-            box.classList.remove('opacity-50');
-        });
-
-        box.addEventListener('dragover', (e) => e.preventDefault());
-
-        box.addEventListener('drop', () => {
-            if (draggedIndex === null || draggedIndex === index) return;
-            const dragged = slots.splice(draggedIndex, 1)[0];
-            slots.splice(index, 0, dragged);
-            renderSlots();
-        });
-
-        box.addEventListener('touchstart', () => {
-            draggedIndex = index;
-            box.classList.add('opacity-50');
-        }, { passive: true });
-
-        box.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-
-        box.addEventListener('touchend', (e) => {
-            const touch = e.changedTouches[0];
-            const target = getBoxFromTouch(touch);
-
-            if (target && target !== box) {
-                const targetIndex = parseInt(target.dataset.index);
-                if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
-                    const dragged = slots.splice(draggedIndex, 1)[0];
-                    slots.splice(targetIndex, 0, dragged);
-                    renderSlots();
-                }
-            }
-
-            draggedIndex = null;
-            box.classList.remove('opacity-50');
-        });
-    }
-
-    // -------------------------
-    // Render
-    // -------------------------
-    function renderSlots() {
-        slotsDiv.innerHTML = '';
-
-        slots.forEach((pokemon, index) => {
-            const box = document.createElement('div');
-            box.className = 'relative flex flex-col items-center border border-border rounded-lg p-2 w-20 cursor-grab';
-            box.dataset.index = index;
             box.draggable = true;
 
-            box.innerHTML = `
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png" class="h-12 w-12 object-contain pointer-events-none" />
-                <p class="text-xs text-center truncate w-full pointer-events-none">${pokemon.name}</p>
-                <input type="hidden" name="pokemon_slots[${index}][pokemon_id]" value="${pokemon.id}" />
-                <input type="hidden" name="pokemon_slots[${index}][slot]" value="${index + 1}" />
-                <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center pointer-events-auto">×</button>
-            `;
+            box.ondragstart = () => {
+                draggedIndex = index;
+                setTimeout(() => box.classList.add('opacity-50'), 0);
+            };
 
-            box.querySelector('button').addEventListener('click', (e) => {
-                e.stopPropagation();
-                removeSlot(index);
-            });
+            box.ondragend = () => {
+                draggedIndex = null;
+                box.classList.remove('opacity-50');
+            };
 
-            applyDragEvents(box, index);
-            slotsDiv.appendChild(box);
+            box.ondragover = (e) => e.preventDefault();
+
+            box.ondrop = () => {
+                if (draggedIndex === null || draggedIndex === index) return;
+                const dragged = slots.splice(draggedIndex, 1)[0];
+                slots.splice(index, 0, dragged);
+                syncSlots();
+            };
+
+            box.ontouchstart = () => {
+                draggedIndex = index;
+                box.classList.add('opacity-50');
+            };
+
+            box.ontouchmove = (e) => e.preventDefault();
+
+            box.ontouchend = (e) => {
+                const touch = e.changedTouches[0];
+                const target = getBoxFromTouch(touch);
+
+                if (target && target !== box) {
+                    const targetIndex = parseInt(target.dataset.index);
+                    if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
+                        const dragged = slots.splice(draggedIndex, 1)[0];
+                        slots.splice(targetIndex, 0, dragged);
+                        syncSlots();
+                    }
+                }
+
+                draggedIndex = null;
+                box.classList.remove('opacity-50');
+            };
         });
     }
 });
