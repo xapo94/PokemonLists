@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PokemonGenderEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -15,6 +16,17 @@ class TeamSlot extends Pivot
         'team_id',
         'pokemon_id',
         'slot',
+        'level',
+        'gender',
+    ];
+
+    protected $casts = [
+        'gender' => PokemonGenderEnum::class,
+    ];
+
+    protected $attributes = [
+        'level' => 100,
+        'gender' => PokemonGenderEnum::Male->value,
     ];
 
     public function team(): \Illuminate\Database\Eloquent\Relations\BelongsTo

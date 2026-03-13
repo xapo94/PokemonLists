@@ -26,6 +26,6 @@ class Team extends Model
 
     public function pokemon(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(Pokemon::class, 'team_slots')->using(TeamSlot::class)->withPivot('slot')->orderBy('slot');
+        return $this->belongsToMany(Pokemon::class, 'team_slots')->using(TeamSlot::class)->withPivot('slot', 'level', 'gender')->orderBy('slot');
     }
 }

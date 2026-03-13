@@ -1,4 +1,4 @@
-<div id="team-builder" data-pokemon='@json($pokemon->map(fn($p) => ["id" => $p->id, "name" => $p->name]))'>
+<div id="team-builder" data-pokemon='@json($slots)'>
     {{-- Search Input --}}
     <div class="relative">
         <input
@@ -30,15 +30,15 @@
                                 name="pokemon_slots[{{ $i }}][level]"
                                 min="1"
                                 max="100"
+                                value="100"
                                 placeholder="1-100"
-                                class="w-20 border border-border rounded px-2 py-1 text-sm bg-background"
+                                class="slot-level w-20 border border-border rounded px-2 py-1 text-sm bg-background"
                             />
                         </div>
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-zinc-500">Gender</label>
-                            <select name="pokemon_slots[{{ $i }}][gender]" class="border border-border rounded px-2 py-1 text-sm bg-background">
-                                <option value="">-</option>
-                                <option value="male">Male</option>
+                            <select name="pokemon_slots[{{ $i }}][gender]" class="slot-gender border border-border rounded px-2 py-1 text-sm bg-background">
+                                <option value="male" selected>Male</option>
                                 <option value="female">Female</option>
                             </select>
                         </div>

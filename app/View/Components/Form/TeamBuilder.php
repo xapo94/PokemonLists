@@ -4,19 +4,19 @@ namespace App\View\Components\Form;
 
 use Closure;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use Illuminate\View\Component;
 
 class TeamBuilder extends Component
 {
-    public Collection $pokemon;
+    public Collection $slots;
 
     /**
      * Create a new component instance.
      */
-    public function __construct(?Collection $pokemon = null)
+    public function __construct(?Collection $slots = null)
     {
-        $this->pokemon = $pokemon ?? new Collection;
+        $this->slots = $slots ?? new Collection;
     }
 
     /**

@@ -50,8 +50,16 @@ class TeamController extends Controller
 
         $team->load('pokemon');
 
+        $slots = $team->pokemon->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'level' => $p->pivot->level ?? 100,
+            'gender' => $p->pivot->gender instanceof \App\Enums\PokemonGenderEnum ? $p->pivot->gender->value : ($p->pivot->gender ?? 'male'),
+        ]);
+
         return view('pokemon.teams.edit', [
             'team' => $team,
+            'slots' => $slots,
         ]);
     }
 

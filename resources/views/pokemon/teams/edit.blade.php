@@ -27,7 +27,7 @@
 
             <div>
                 <label class="block text-sm mb-1">Pokémon</label>
-                <x-form.team-builder :pokemon="$team->pokemon" />
+                <x-form.team-builder :slots="$slots" />
                 <x-form.error for="pokemon_slots" />
             </div>
 

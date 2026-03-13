@@ -79,6 +79,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------
+    // Save current DOM values into slots array
+    // -------------------------
+    function saveDomValues() {
+        slotBoxes.forEach((box, i) => {
+            if (slots[i]) {
+                slots[i].level = box.querySelector('.slot-level').value;
+                slots[i].gender = box.querySelector('.slot-gender').value;
+            }
+        });
+    }
+
+    // -------------------------
     // Slot Management
     // -------------------------
     function addSlot(pokemon) {
@@ -93,12 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        saveDomValues();
         maxWarning.classList.add('hidden');
         slots.push(pokemon);
         syncSlots();
     }
 
     function removeSlot(index) {
+        saveDomValues();
         slots.splice(index, 1);
         maxWarning.classList.add('hidden');
         syncSlots();
@@ -116,6 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pokemon) {
                 box.querySelector('.slot-image').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
                 box.querySelector('.slot-name').textContent = pokemon.name;
+                box.querySelector('.slot-level').value = pokemon.level ?? 100;
+                box.querySelector('.slot-gender').value = pokemon.gender ?? 'male';
                 pokemonIdInput.value = pokemon.id;
                 pokemonIdInput.disabled = false;
                 slotNumberInput.value = i + 1;
@@ -159,7 +175,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function wireDragEvents() {
         slotBoxes.forEach((box, index) => {
-            if (!slots[index]) return;
+            if (!slots[index]) {
+                box.draggable = false;
+                box.ondragstart = null;
+                box.ondragend = null;
+                box.ondragover = null;
+                box.ondrop = null;
+                box.ontouchstart = null;
+                box.ontouchmove = null;
+                box.ontouchend = null;
+                return;
+            }
 
             box.draggable = true;
 
@@ -177,8 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             box.ondrop = () => {
                 if (draggedIndex === null || draggedIndex === index) return;
-                const dragged = slots.splice(draggedIndex, 1)[0];
-                slots.splice(index, 0, dragged);
+                saveDomValues();
+                const temp = slots[draggedIndex];
+                slots[draggedIndex] = slots[index];
+                slots[index] = temp;
                 syncSlots();
             };
 
@@ -196,8 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (target && target !== box) {
                     const targetIndex = parseInt(target.dataset.index);
                     if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
-                        const dragged = slots.splice(draggedIndex, 1)[0];
-                        slots.splice(targetIndex, 0, dragged);
+                        saveDomValues();
+                        const temp = slots[draggedIndex];
+                        slots[draggedIndex] = slots[targetIndex];
+                        slots[targetIndex] = temp;
                         syncSlots();
                     }
                 }
