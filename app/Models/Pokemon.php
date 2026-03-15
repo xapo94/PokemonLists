@@ -22,4 +22,9 @@ class Pokemon extends Model
     {
         return $this->belongsToMany(Team::class, 'team_slots')->using(TeamSlot::class)->withPivot('slot');
     }
+
+    public function moves(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Move::class, 'move_pokemon');
+    }
 }
