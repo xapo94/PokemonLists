@@ -7,7 +7,12 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'resources/js/pokemon-search.js',
+                'resources/js/team-builder.js',
+            ],
             refresh: true,
         }),
         tailwindcss(),
