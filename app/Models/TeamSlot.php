@@ -42,6 +42,8 @@ class TeamSlot extends Pivot
     //  A teamslot can have up to 4 moves
     public function moves(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(Move::class, 'team_slot_move')->withPivot('position')->orderBy('position');
+        return $this->belongsToMany(Move::class, 'team_slot_move', 'team_slot_id', 'move_id')
+            ->withPivot('position')
+            ->orderBy('position');
     }
 }

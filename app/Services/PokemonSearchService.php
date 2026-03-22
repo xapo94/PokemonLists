@@ -19,4 +19,16 @@ class PokemonSearchService
             ->limit(20)
             ->get(['id', 'name']);
     }
+
+    /**
+     * Get all learnable moves for a Pokémon.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getMoves(Pokemon $pokemon)
+    {
+        return $pokemon->moves()
+            ->orderBy('name')
+            ->get(['moves.id', 'moves.name']);
+    }
 }

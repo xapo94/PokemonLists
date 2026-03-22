@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let slots = [];
     let timeout;
     let draggedIndex = null;
+    let activeMoveBox = null;
 
     // -------------------------
     // Init
@@ -76,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!resultsDiv.contains(e.target) && e.target !== searchInput) {
             resultsDiv.classList.add('hidden');
         }
+
+        if (activeMoveBox && !activeMoveBox.contains(e.target)) {
+            closeMoveResults();
+        }
     });
 
     // -------------------------
@@ -86,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (slots[i]) {
                 slots[i].level = box.querySelector('.slot-level').value;
                 slots[i].gender = box.querySelector('.slot-gender').value;
+                slots[i].moves = Array.from(box.querySelectorAll('.slot-move-id')).map((input, m) => ({
+                    id: input.value || null,
+                    name: box.querySelectorAll('.slot-move-box')[m].dataset.moveName || null,
+                }));
             }
         });
     }
@@ -107,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveDomValues();
         maxWarning.classList.add('hidden');
-        slots.push(pokemon);
+        slots.push({ ...pokemon, moves: [null, null, null, null] });
         syncSlots();
     }
 
@@ -116,6 +125,119 @@ document.addEventListener('DOMContentLoaded', () => {
         slots.splice(index, 1);
         maxWarning.classList.add('hidden');
         syncSlots();
+    }
+
+    // -------------------------
+    // Get all selected move IDs across all slots
+    // -------------------------
+    function getAllSelectedMoveIds() {
+        return slots.flatMap(s => (s.moves || []).map(m => m ? m.id : null)).filter(Boolean);
+    }
+
+    // -------------------------
+    // Move Selection
+    // -------------------------
+    function closeMoveResults() {
+        if (activeMoveBox) {
+            const results = activeMoveBox.querySelector('.slot-move-results');
+            if (results) results.classList.add('hidden');
+            activeMoveBox = null;
+        }
+    }
+
+    function setMoveSelected(moveBox, moveInput, move) {
+        moveBox.textContent = move.name;
+        moveBox.dataset.moveName = move.name;
+        moveBox.classList.remove('border-dashed', 'border-zinc-300', 'text-zinc-400');
+        moveBox.classList.add('border-solid', 'border-zinc-500', 'text-zinc-900');
+        moveInput.value = move.id;
+    }
+
+    function setMoveEmpty(moveBox, moveInput) {
+        moveBox.textContent = '+ Add Move';
+        moveBox.dataset.moveName = '';
+        moveBox.classList.remove('border-solid', 'border-zinc-500', 'text-zinc-900');
+        moveBox.classList.add('border-dashed', 'border-zinc-300', 'text-zinc-400');
+        moveInput.value = '';
+    }
+
+    function wireMoveBoxes(box, slotIndex) {
+        const moveBoxes = box.querySelectorAll('.slot-move-box');
+        const moveResults = box.querySelector('.slot-move-results');
+
+        moveBoxes.forEach((moveBox, moveIndex) => {
+            // Stop touch events from bubbling to slot box drag handlers
+            moveBox.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+            moveBox.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+            moveBox.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
+
+            moveBox.addEventListener('click', async (e) => {
+                e.stopPropagation();
+
+                closeMoveResults();
+
+                const pokemonId = slots[slotIndex]?.id;
+                if (!pokemonId) return;
+
+                activeMoveBox = box;
+
+                try {
+                    const res = await fetch(`/pokemons/${pokemonId}/moves`);
+                    if (!res.ok) throw new Error('Network error');
+                    const allMoves = await res.json();
+
+                    moveResults.innerHTML = '';
+                    moveResults.classList.remove('hidden');
+
+                    const moveSearchInput = document.createElement('input');
+                    moveSearchInput.type = 'text';
+                    moveSearchInput.placeholder = 'Search move...';
+                    moveSearchInput.className = 'w-full px-2 py-1 text-sm border-b border-border outline-none sticky top-0 bg-white';
+                    moveResults.appendChild(moveSearchInput);
+
+                    const renderMoves = (filter = '') => {
+                        Array.from(moveResults.children).slice(1).forEach(el => el.remove());
+
+                        const selectedMoveIds = getAllSelectedMoveIds();
+
+                        allMoves
+                            .filter(move => !selectedMoveIds.includes(move.id))
+                            .filter(move => move.name.includes(filter.toLowerCase()))
+                            .forEach(move => {
+                                const div = document.createElement('div');
+                                div.textContent = move.name;
+                                div.className = 'px-2 py-1 hover:bg-gray-100 cursor-pointer text-sm';
+                                div.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+
+                                    const moveInputs = box.querySelectorAll('.slot-move-id');
+                                    setMoveSelected(moveBox, moveInputs[moveIndex], move);
+
+                                    if (!slots[slotIndex].moves) slots[slotIndex].moves = [null, null, null, null];
+                                    slots[slotIndex].moves[moveIndex] = { id: move.id, name: move.name };
+
+                                    closeMoveResults();
+                                });
+                                moveResults.appendChild(div);
+                            });
+                    };
+
+                    renderMoves();
+
+                    moveSearchInput.addEventListener('input', (e) => {
+                        e.stopPropagation();
+                        renderMoves(e.target.value.trim());
+                    });
+
+                    moveSearchInput.addEventListener('click', (e) => e.stopPropagation());
+
+                    setTimeout(() => moveSearchInput.focus(), 0);
+
+                } catch (error) {
+                    console.error('Error fetching moves:', error);
+                }
+            });
+        });
     }
 
     // -------------------------
@@ -137,6 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 slotNumberInput.value = i + 1;
                 slotNumberInput.disabled = false;
                 box.classList.remove('hidden');
+
+                const moveBoxes = box.querySelectorAll('.slot-move-box');
+                const moveInputs = box.querySelectorAll('.slot-move-id');
+                const moves = pokemon.moves || [null, null, null, null];
+
+                moves.forEach((move, m) => {
+                    if (move && move.id) {
+                        setMoveSelected(moveBoxes[m], moveInputs[m], move);
+                    } else {
+                        setMoveEmpty(moveBoxes[m], moveInputs[m]);
+                    }
+                });
+
             } else {
                 box.querySelector('.slot-image').src = '';
                 box.querySelector('.slot-name').textContent = '';
@@ -150,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         wireRemoveButtons();
         wireDragEvents();
+        slotBoxes.forEach((box, i) => wireMoveBoxes(box, i));
     }
 
     // -------------------------

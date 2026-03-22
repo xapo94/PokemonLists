@@ -21,6 +21,12 @@ class StoreTeamRequest extends FormRequest
         $this->merge([
             'pokemon_slots' => collect($this->pokemon_slots)
                 ->filter(fn ($slot) => ! empty($slot['pokemon_id']))
+                ->map(fn ($slot) => array_merge($slot, [
+                    'moves' => collect($slot['moves'] ?? [])
+                        ->filter(fn ($move) => ! empty($move))
+                        ->values()
+                        ->toArray(),
+                ]))
                 ->values()
                 ->toArray(),
         ]);
@@ -36,10 +42,12 @@ class StoreTeamRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'pokemon_slots' => ['required', 'array', 'min:1', 'max:6'],
-            'pokemon_slots.*.pokemon_id' => ['required', 'integer', 'exists:pokemons,id'],
+            'pokemon_slots.*.pokemon_id' => ['required', 'integer', 'exists:pokemons,id', 'distinct'],
             'pokemon_slots.*.slot' => ['required', 'integer', 'min:1', 'max:6'],
             'pokemon_slots.*.level' => ['nullable', 'integer', 'min:1', 'max:100'],
             'pokemon_slots.*.gender' => ['nullable', Rule::in(PokemonGenderEnum::values())],
+            'pokemon_slots.*.moves' => ['nullable', 'array', 'max:4'],
+            'pokemon_slots.*.moves.*' => ['integer', 'exists:moves,id', 'distinct'],
         ];
     }
 

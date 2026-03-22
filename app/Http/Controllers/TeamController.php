@@ -40,6 +40,24 @@ class TeamController extends Controller
 
         $team->pokemon()->attach($attachData);
 
+        $team->load('slots');
+
+        foreach ($validated['pokemon_slots'] as $slotData) {
+            if (empty($slotData['moves'])) {
+                continue;
+            }
+
+            $teamSlot = $team->slots->firstWhere('pokemon_id', $slotData['pokemon_id']);
+
+            if ($teamSlot) {
+                $movesData = collect($slotData['moves'])->mapWithKeys(fn ($moveId, $position) => [
+                    $moveId => ['position' => $position + 1],
+                ]);
+
+                $teamSlot->moves()->attach($movesData);
+            }
+        }
+
         return redirect()->route('teams.index')->with('success', 'Team created successfully.');
     }
 
@@ -52,13 +70,19 @@ class TeamController extends Controller
     {
         $this->authorize('update', $team);
 
-        $team->load('pokemon');
+        $team->load('pokemon', 'slots.moves');
 
         $slots = $team->pokemon->map(fn ($p) => [
             'id' => $p->id,
             'name' => $p->name,
             'level' => $p->pivot->level,
             'gender' => $p->pivot->gender->value,
+            'moves' => $team->slots
+                ->firstWhere('pokemon_id', $p->id)
+                ->moves
+                ->map(fn ($m) => ['id' => $m->id, 'name' => $m->name])
+                ->values()
+                ->toArray(),
         ]);
 
         return view('pokemon.teams.edit', [
@@ -86,6 +110,20 @@ class TeamController extends Controller
         ]);
 
         $team->pokemon()->sync($syncData);
+
+        $team->load('slots');
+
+        foreach ($validated['pokemon_slots'] as $slotData) {
+            $teamSlot = $team->slots->firstWhere('pokemon_id', $slotData['pokemon_id']);
+
+            if ($teamSlot) {
+                $movesData = collect($slotData['moves'] ?? [])->mapWithKeys(fn ($moveId, $position) => [
+                    $moveId => ['position' => $position + 1],
+                ]);
+
+                $teamSlot->moves()->sync($movesData);
+            }
+        }
 
         return redirect()->route('teams.index')->with('success', 'Team updated successfully.');
     }
