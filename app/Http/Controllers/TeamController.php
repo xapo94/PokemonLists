@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TeamCreated;
 use App\Http\Requests\Team\StoreTeamRequest;
 use App\Http\Requests\Team\UpdateTeamRequest;
 use App\Models\Team;
@@ -57,6 +58,9 @@ class TeamController extends Controller
                 $teamSlot->moves()->attach($movesData);
             }
         }
+
+        // Fire Event
+        TeamCreated::dispatch($team);
 
         return redirect()->route('teams.index')->with('success', 'Team created successfully.');
     }
